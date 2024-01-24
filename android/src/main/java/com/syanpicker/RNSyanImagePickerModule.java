@@ -2,10 +2,12 @@
 package com.syanpicker;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.text.TextUtils;
 import android.util.Base64;
 
@@ -21,12 +23,20 @@ import com.facebook.react.bridge.WritableArray;
 import com.facebook.react.bridge.WritableMap;
 import com.facebook.react.bridge.WritableNativeArray;
 import com.facebook.react.bridge.WritableNativeMap;
-import com.luck.picture.lib.PictureSelector;
+//import com.luck.picture.lib.PictureSelector;
+import com.luck.picture.lib.basic.PictureSelector;
 import com.luck.picture.lib.config.PictureConfig;
 import com.luck.picture.lib.config.PictureMimeType;
+import com.luck.picture.lib.config.SelectMimeType;
+import com.luck.picture.lib.config.SelectModeConfig;
+import com.luck.picture.lib.engine.CompressFileEngine;
 import com.luck.picture.lib.entity.LocalMedia;
-import com.luck.picture.lib.tools.PictureFileUtils;
-import com.luck.picture.lib.tools.SdkVersionUtils;
+import com.luck.picture.lib.interfaces.OnKeyValueResultCallbackListener;
+import com.luck.picture.lib.interfaces.OnResultCallbackListener;
+import com.luck.picture.lib.utils.PictureFileUtils;
+import com.luck.picture.lib.utils.SdkVersionUtils;
+//import com.luck.picture.lib.tools.PictureFileUtils;
+//import com.luck.picture.lib.tools.SdkVersionUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -38,6 +48,9 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+
+import top.zibin.luban.Luban;
+import top.zibin.luban.OnNewCompressListener;
 
 public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
 
@@ -164,54 +177,72 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
         int quality = this.cameraOptions.getInt("quality");
         boolean isWeChatStyle = this.cameraOptions.getBoolean("isWeChatStyle");
-        boolean showSelectedIndex = this.cameraOptions.getBoolean("showSelectedIndex");
-        boolean compressFocusAlpha = this.cameraOptions.getBoolean("compressFocusAlpha");
 
         int modeValue;
         if (imageCount == 1) {
-            modeValue = 1;
+            modeValue = SelectModeConfig.SINGLE;
         } else {
-            modeValue = 2;
+            modeValue = SelectModeConfig.MULTIPLE;
         }
 
-        Boolean isAndroidQ = SdkVersionUtils.checkedAndroid_Q();
+        Boolean isAndroidQ = SdkVersionUtils.isQ();
 
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
-                .openGallery(PictureMimeType.ofImage())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
-                .loadImageEngine(GlideEngine.createGlideEngine())
-                .maxSelectNum(imageCount)// 最大图片选择数量 int
-                .minSelectNum(0)// 最小选择数量 int
-                .imageSpanCount(4)// 每行显示个数 int
-                .selectionMode(modeValue)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
-                .previewImage(true)// 是否可预览图片 true or false
-                .previewVideo(false)// 是否可预览视频 true or false
-                .enablePreviewAudio(false) // 是否可播放音频 true or false
-                .isCamera(isCamera)// 是否显示拍照按钮 true or false
-                .imageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
-                .isZoomAnim(true)// 图片列表点击 缩放效果 默认true
-                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
-                .enableCrop(isCrop)// 是否裁剪 true or false
-                .compress(compress)// 是否压缩 true or false
-                .glideOverride(160, 160)// int glide 加载宽高，越小图片列表越流畅，但会影响列表图片浏览的清晰度
-                .withAspectRatio(CropW, CropH)// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
-                .hideBottomControls(isCrop)// 是否显示uCrop工具栏，默认不显示 true or false
+                .openGallery(SelectMimeType.ofImage())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
+                .setImageEngine(GlideEngine.createGlideEngine())
+                .setMaxSelectNum(imageCount)// 最大图片选择数量 int
+                .setMinSelectNum(0)// 最小选择数量 int
+                .setImageSpanCount(4)// 每行显示个数 int
+                .setSelectionMode(modeValue)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
+                .isPreviewImage(true)// 是否可预览图片 true or false
+                .isPreviewVideo(false)// 是否可预览视频 true or false
+                .isPreviewAudio(false) // 是否可播放音频 true or false
+                .isDisplayCamera(isCamera)// 是否显示拍照按钮 true or false
+//                .setCameraImageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
+                .isSelectZoomAnim(true)// 图片列表点击 缩放效果 默认true
+//                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
+//                .enableCrop(isCrop)// 是否裁剪 true or false
+                .setCompressEngine((CompressFileEngine) (context, source, call) -> {
+                    Luban.with(context).load(source).ignoreBy(100)
+                            .setCompressListener(new OnNewCompressListener() {
+                                @Override
+                                public void onStart() {
+
+                                }
+
+                                @Override
+                                public void onSuccess(String source, File compressFile) {
+                                    if (call != null) {
+                                        call.onCallback(source, compressFile.getAbsolutePath());
+                                    }
+                                }
+
+                                @Override
+                                public void onError(String source, Throwable e) {
+                                    if (call != null) {
+                                        call.onCallback(source, null);
+                                    }
+                                }
+                            }).launch();
+                })// 是否压缩 true or false
+//                .glideOverride(160, 160)// int glide 加载宽高，越小图片列表越流畅，但会影响列表图片浏览的清晰度
+//                .withAspectRatio(CropW, CropH)// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
+//                .hideBottomControls(isCrop)// 是否显示uCrop工具栏，默认不显示 true or false
                 .isGif(isGif)// 是否显示gif图片 true or false
-                .freeStyleCropEnabled(freeStyleCropEnabled)// 裁剪框是否可拖拽 true or false
-                .circleDimmedLayer(showCropCircle)// 是否圆形裁剪 true or false
-                .showCropFrame(showCropFrame)// 是否显示裁剪矩形边框 圆形裁剪时建议设为false   true or false
-                .showCropGrid(showCropGrid)// 是否显示裁剪矩形网格 圆形裁剪时建议设为false    true or false
-                .openClickSound(false)// 是否开启点击声音 true or false
-                .cropCompressQuality(quality)// 裁剪压缩质量 默认90 int
-                .minimumCompressSize(minimumCompressSize)// 小于100kb的图片不压缩
-                .synOrAsy(true)//同步true或异步false 压缩 默认同步
-                .rotateEnabled(rotateEnabled) // 裁剪是否可旋转图片 true or false
-                .scaleEnabled(scaleEnabled)// 裁剪是否可放大缩小图片 true or false
-                .selectionMedia(selectList) // 当前已选中的图片 List
-                .isWeChatStyle(isWeChatStyle)
-                .theme(showSelectedIndex ? R.style.picture_WeChat_style : 0)
-                .compressFocusAlpha(compressFocusAlpha)
-                .forResult(PictureConfig.CHOOSE_REQUEST); //结果回调onActivityResult code
+//                .freeStyleCropEnabled(freeStyleCropEnabled)// 裁剪框是否可拖拽 true or false
+//                .circleDimmedLayer(showCropCircle)// 是否圆形裁剪 true or false
+//                .showCropFrame(showCropFrame)// 是否显示裁剪矩形边框 圆形裁剪时建议设为false   true or false
+//                .showCropGrid(showCropGrid)// 是否显示裁剪矩形网格 圆形裁剪时建议设为false    true or false
+                .isOpenClickSound(false)// 是否开启点击声音 true or false
+//                .cropCompressQuality(quality)// 裁剪压缩质量 默认90 int
+//                .minimumCompressSize(minimumCompressSize)// 小于100kb的图片不压缩
+//                .synOrAsy(true)//同步true或异步false 压缩 默认同步
+//                .rotateEnabled(rotateEnabled) // 裁剪是否可旋转图片 true or false
+//                .scaleEnabled(scaleEnabled)// 裁剪是否可放大缩小图片 true or false
+//                .selectionMedia(selectList) // 当前已选中的图片 List
+//                .isWeChatStyle(isWeChatStyle)
+                .forResult(PictureConfig.REQUEST_CAMERA); //结果回调onActivityResult code
     }
 
     /**
@@ -230,36 +261,39 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         boolean scaleEnabled = this.cameraOptions.getBoolean("scaleEnabled");
         int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
         int quality = this.cameraOptions.getInt("quality");
-        boolean isWeChatStyle = this.cameraOptions.getBoolean("isWeChatStyle");
-        boolean showSelectedIndex = this.cameraOptions.getBoolean("showSelectedIndex");
-        boolean compressFocusAlpha = this.cameraOptions.getBoolean("compressFocusAlpha");
 
-        Boolean isAndroidQ = SdkVersionUtils.checkedAndroid_Q();
+        Boolean isAndroidQ = SdkVersionUtils.isQ();
 
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
-                .openCamera(PictureMimeType.ofImage())
-                .loadImageEngine(GlideEngine.createGlideEngine())
-                .imageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
-                .enableCrop(isCrop)// 是否裁剪 true or false
-                .compress(compress)// 是否压缩 true or false
-                .glideOverride(160, 160)// int glide 加载宽高，越小图片列表越流畅，但会影响列表图片浏览的清晰度
-                .withAspectRatio(CropW, CropH)// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
-                .hideBottomControls(isCrop)// 是否显示uCrop工具栏，默认不显示 true or false
-                .freeStyleCropEnabled(freeStyleCropEnabled)// 裁剪框是否可拖拽 true or false
-                .circleDimmedLayer(showCropCircle)// 是否圆形裁剪 true or false
-                .showCropFrame(showCropFrame)// 是否显示裁剪矩形边框 圆形裁剪时建议设为false   true or false
-                .showCropGrid(showCropGrid)// 是否显示裁剪矩形网格 圆形裁剪时建议设为false    true or false
-                .openClickSound(false)// 是否开启点击声音 true or false
-                .cropCompressQuality(quality)// 裁剪压缩质量 默认90 int
-                .minimumCompressSize(minimumCompressSize)// 小于100kb的图片不压缩
-                .synOrAsy(true)//同步true或异步false 压缩 默认同步
-                .rotateEnabled(rotateEnabled) // 裁剪是否可旋转图片 true or false
-                .scaleEnabled(scaleEnabled)// 裁剪是否可放大缩小图片 true or false
-                .isWeChatStyle(isWeChatStyle)
-                .theme(showSelectedIndex ? R.style.picture_WeChat_style : 0)
-                .compressFocusAlpha(compressFocusAlpha)
-                .forResult(PictureConfig.CHOOSE_REQUEST);//结果回调onActivityResult code
+                .openCamera(SelectMimeType.ofImage())
+//                .setImageEngine(GlideEngine.createGlideEngine())
+//                .setMinSelectNum(0)// 最小选择数量 int
+//                .setImageSpanCount(4)// 每行显示个数 int
+//                .isPreviewImage(true)// 是否可预览图片 true or false
+//                .isPreviewVideo(false)// 是否可预览视频 true or false
+//                .isPreviewAudio(false) // 是否可播放音频 true or false
+                .setCameraImageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
+//                .isSelectZoomAnim(true)// 图片列表点击 缩放效果 默认true
+//                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
+//                .enableCrop(isCrop)// 是否裁剪 true or false
+                .setCompressEngine((CompressFileEngine) (context, source, call) -> {
+
+                })// 是否压缩 true or false
+//                .isOpenClickSound(false)// 是否开启点击声音 true or false
+                .forResult(new OnResultCallbackListener<LocalMedia>() {
+                    @Override
+                    public void onResult(ArrayList<LocalMedia> result) {
+                        if(result != null){
+                            onGetResult(result);
+                        }
+                    }
+
+                    @Override
+                    public void onCancel() {
+
+                    }
+                });
     }
 
     /**
@@ -273,20 +307,22 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         int imageCount = this.cameraOptions.getInt("imageCount");
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
-                .openCamera(PictureMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
-                .loadImageEngine(GlideEngine.createGlideEngine())
-                .selectionMedia(selectList) // 当前已选中的图片 List
-                .openClickSound(false)// 是否开启点击声音 true or false
-                .maxSelectNum(imageCount)// 最大图片选择数量 int
-                .minSelectNum(0)// 最小选择数量 int
-                .imageSpanCount(4)// 每行显示个数 int
-                .selectionMode(PictureConfig.MULTIPLE)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
-                .previewVideo(true)// 是否可预览视频 true or false
-                .videoQuality(quality)// 视频录制质量 0 or 1 int
-                .videoMaxSecond(MaxSecond)// 显示多少秒以内的视频or音频也可适用 int
-                .videoMinSecond(MinSecond)// 显示多少秒以内的视频or音频也可适用 int
-                .recordVideoSecond(recordVideoSecond)//视频秒数录制 默认60s int
-                .forResult(PictureConfig.REQUEST_CAMERA);//结果回调onActivityResult code
+                .openCamera(SelectMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
+                .setVideoQuality(quality)// 视频录制质量 0 or 1 int
+                .setRecordVideoMaxSecond(MaxSecond)
+                .setRecordVideoMinSecond(MinSecond)
+                .forResult(new OnResultCallbackListener<LocalMedia>() {
+                    @Override
+                    public void onResult(ArrayList<LocalMedia> result) {
+                        if(result != null)
+                            onGetVideoResult(result);
+                    }
+
+                    @Override
+                    public void onCancel() {
+
+                    }
+                });
     }
 
     /**
@@ -302,20 +338,18 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
 
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
-                .openGallery(PictureMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
-                .loadImageEngine(GlideEngine.createGlideEngine())
-                .selectionMedia(selectList) // 当前已选中的视频 List
-                .openClickSound(false)// 是否开启点击声音 true or false
-                .isCamera(isCamera)// 是否显示拍照按钮 true or false
-                .maxSelectNum(videoCount)// 最大视频选择数量 int
-                .minSelectNum(1)// 最小选择数量 int
-                .imageSpanCount(4)// 每行显示个数 int
-                .selectionMode(PictureConfig.MULTIPLE)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
-                .previewVideo(true)// 是否可预览视频 true or false
-                .videoQuality(quality)// 视频录制质量 0 or 1 int
-                .videoMaxSecond(MaxSecond)// 显示多少秒以内的视频or音频也可适用 int
-                .videoMinSecond(MinSecond)// 显示多少秒以内的视频or音频也可适用 int
-                .recordVideoSecond(recordVideoSecond)//视频秒数录制 默认60s int
+                .openGallery(SelectMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
+                .setImageEngine(GlideEngine.createGlideEngine())
+                .isOpenClickSound(false)// 是否开启点击声音 true or false
+                .isDisplayCamera(isCamera)// 是否显示拍照按钮 true or false
+                .setMaxSelectNum(videoCount)// 最大视频选择数量 int
+                .setMinSelectNum(1)// 最小选择数量 int
+                .setImageSpanCount(4)// 每行显示个数 int
+                .setSelectionMode(SelectModeConfig.MULTIPLE)// 多选 or 单选 PictureConfig.MULTIPLE or PictureConfig.SINGLE
+                .isPreviewVideo(true)// 是否可预览视频 true or false
+                .setVideoQuality(quality)// 视频录制质量 0 or 1 int
+                .setRecordVideoMaxSecond(MaxSecond)// 显示多少秒以内的视频or音频也可适用 int
+                .setRecordVideoMinSecond(MinSecond)// 显示多少秒以内的视频or音频也可适用 int
                 .forResult(PictureConfig.REQUEST_CAMERA);//结果回调onActivityResult code
     }
 
@@ -341,56 +375,101 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
     };
 
     private void onGetVideoResult(Intent data) {
-        List<LocalMedia> mVideoSelectList = PictureSelector.obtainMultipleResult(data);
-        if (cameraOptions != null) {
-            boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
-            if (!mVideoSelectList.isEmpty() && isRecordSelected) {
-                selectList = mVideoSelectList;
-            }
-            WritableArray videoList = new WritableNativeArray();
-
-            for (LocalMedia media : mVideoSelectList) {
-                if (TextUtils.isEmpty(media.getPath())) {
-                    continue;
-                }
-
-                WritableMap videoMap = new WritableNativeMap();
-
-                Boolean isAndroidQ = SdkVersionUtils.checkedAndroid_Q();
-                String filePath = isAndroidQ ? media.getAndroidQToPath() : media.getPath();
-
-                videoMap.putString("uri", "file://" + filePath);
-                videoMap.putString("coverUri", "file://" + this.getVideoCover(filePath));
-                videoMap.putString("fileName", new File(media.getPath()).getName());
-                videoMap.putDouble("size", new File(media.getPath()).length());
-                videoMap.putDouble("duration", media.getDuration() / 1000.00);
-                videoMap.putInt("width", media.getWidth());
-                videoMap.putInt("height", media.getHeight());
-                videoMap.putString("type", "video");
-                videoMap.putString("mime", media.getMimeType());
-                videoList.pushMap(videoMap);
-            }
-
-            invokeSuccessWithResult(videoList);
+        List<LocalMedia> mVideoSelectList = PictureSelector.obtainSelectorList(data);
+        boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
+        if (!mVideoSelectList.isEmpty() && isRecordSelected) {
+            selectList = mVideoSelectList;
         }
+        WritableArray videoList = new WritableNativeArray();
+
+        for (LocalMedia media : mVideoSelectList) {
+            if (TextUtils.isEmpty(media.getPath())) {
+                continue;
+            }
+
+            WritableMap videoMap = new WritableNativeMap();
+
+            Boolean isAndroidQ = SdkVersionUtils.isQ();
+//            String filePath = isAndroidQ ? media.getAndroidQToPath() : media.getPath();
+            String filePath = media.getPath();
+
+            videoMap.putString("uri", "file://" + filePath);
+            videoMap.putString("coverUri", "file://" + this.getVideoCover(filePath));
+            videoMap.putString("fileName", new File(media.getPath()).getName());
+            videoMap.putDouble("size", new File(media.getPath()).length());
+            videoMap.putDouble("duration", media.getDuration() / 1000.00);
+            videoMap.putInt("width", media.getWidth());
+            videoMap.putInt("height", media.getHeight());
+            videoMap.putString("type", "video");
+            videoMap.putString("mime", media.getMimeType());
+            videoList.pushMap(videoMap);
+        }
+
+        invokeSuccessWithResult(videoList);
+    }
+    private void onGetVideoResult(List<LocalMedia> data) {
+        List<LocalMedia> mVideoSelectList = data;
+        boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
+        if (!mVideoSelectList.isEmpty() && isRecordSelected) {
+            selectList = mVideoSelectList;
+        }
+        WritableArray videoList = new WritableNativeArray();
+
+        for (LocalMedia media : mVideoSelectList) {
+            if (TextUtils.isEmpty(media.getPath())) {
+                continue;
+            }
+
+            WritableMap videoMap = new WritableNativeMap();
+
+            Boolean isAndroidQ = SdkVersionUtils.isQ();
+//            String filePath = isAndroidQ ? media.getAndroidQToPath() : media.getPath();
+            String filePath = media.getPath();
+
+            videoMap.putString("uri", "file://" + filePath);
+            videoMap.putString("coverUri", "file://" + this.getVideoCover(filePath));
+            videoMap.putString("fileName", new File(media.getPath()).getName());
+            videoMap.putDouble("size", new File(media.getPath()).length());
+            videoMap.putDouble("duration", media.getDuration() / 1000.00);
+            videoMap.putInt("width", media.getWidth());
+            videoMap.putInt("height", media.getHeight());
+            videoMap.putString("type", "video");
+            videoMap.putString("mime", media.getMimeType());
+            videoList.pushMap(videoMap);
+        }
+
+        invokeSuccessWithResult(videoList);
     }
 
     private void onGetResult(Intent data) {
-        List<LocalMedia> tmpSelectList = PictureSelector.obtainMultipleResult(data);
-        if (cameraOptions != null) {
-            boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
-            if (!tmpSelectList.isEmpty() && isRecordSelected) {
-                selectList = tmpSelectList;
-            }
-
-            WritableArray imageList = new WritableNativeArray();
-            boolean enableBase64 = cameraOptions.getBoolean("enableBase64");
-
-            for (LocalMedia media : tmpSelectList) {
-                imageList.pushMap(getImageResult(media, enableBase64));
-            }
-            invokeSuccessWithResult(imageList);
+        List<LocalMedia> tmpSelectList = PictureSelector.obtainSelectorList(data);
+        boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
+        if (!tmpSelectList.isEmpty() && isRecordSelected) {
+            selectList = tmpSelectList;
         }
+
+        WritableArray imageList = new WritableNativeArray();
+        boolean enableBase64 = cameraOptions.getBoolean("enableBase64");
+
+        for (LocalMedia media : tmpSelectList) {
+            imageList.pushMap(getImageResult(media, enableBase64));
+        }
+        invokeSuccessWithResult(imageList);
+    }
+    private void onGetResult(List<LocalMedia> data) {
+        List<LocalMedia> tmpSelectList = data;
+        boolean isRecordSelected = cameraOptions.getBoolean("isRecordSelected");
+        if (!tmpSelectList.isEmpty() && isRecordSelected) {
+            selectList = tmpSelectList;
+        }
+
+        WritableArray imageList = new WritableNativeArray();
+        boolean enableBase64 = cameraOptions.getBoolean("enableBase64");
+
+        for (LocalMedia media : tmpSelectList) {
+            imageList.pushMap(getImageResult(media, enableBase64));
+        }
+        invokeSuccessWithResult(imageList);
     }
 
     private WritableMap getImageResult(LocalMedia media, Boolean enableBase64) {
@@ -404,6 +483,7 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         if (media.isCut()) {
             path = media.getCutPath();
         }
+
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         BitmapFactory.decodeFile(path, options);
@@ -449,9 +529,6 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
             e.printStackTrace();
         }
         bytes = output.toByteArray();
-        if(absoluteFilePath.toLowerCase().endsWith("png")){
-          return "data:image/png;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
-        }
         return "data:image/jpeg;base64," + Base64.encodeToString(bytes, Base64.NO_WRAP);
     }
 
