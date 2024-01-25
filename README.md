@@ -1,3 +1,5 @@
+# 修改点
+安卓PictureSelector插件更新到v3.11.2
 
 # react-native-syan-image-picker
 
