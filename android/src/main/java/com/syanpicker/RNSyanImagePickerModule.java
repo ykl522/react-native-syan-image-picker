@@ -33,6 +33,7 @@ import com.luck.picture.lib.engine.CompressFileEngine;
 import com.luck.picture.lib.entity.LocalMedia;
 import com.luck.picture.lib.interfaces.OnKeyValueResultCallbackListener;
 import com.luck.picture.lib.interfaces.OnResultCallbackListener;
+import com.luck.picture.lib.language.LanguageConfig;
 import com.luck.picture.lib.utils.PictureFileUtils;
 import com.luck.picture.lib.utils.SdkVersionUtils;
 //import com.luck.picture.lib.tools.PictureFileUtils;
@@ -163,20 +164,23 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
     private void openImagePicker() {
         int imageCount = this.cameraOptions.getInt("imageCount");
         boolean isCamera = this.cameraOptions.getBoolean("isCamera");
-        boolean isCrop = this.cameraOptions.getBoolean("isCrop");
-        int CropW = this.cameraOptions.getInt("CropW");
-        int CropH = this.cameraOptions.getInt("CropH");
+//        boolean isCrop = this.cameraOptions.getBoolean("isCrop");
+//        int CropW = this.cameraOptions.getInt("CropW");
+//        int CropH = this.cameraOptions.getInt("CropH");
         boolean isGif = this.cameraOptions.getBoolean("isGif");
-        boolean showCropCircle = this.cameraOptions.getBoolean("showCropCircle");
-        boolean showCropFrame = this.cameraOptions.getBoolean("showCropFrame");
-        boolean showCropGrid = this.cameraOptions.getBoolean("showCropGrid");
-        boolean compress = this.cameraOptions.getBoolean("compress");
-        boolean freeStyleCropEnabled = this.cameraOptions.getBoolean("freeStyleCropEnabled");
-        boolean rotateEnabled = this.cameraOptions.getBoolean("rotateEnabled");
-        boolean scaleEnabled = this.cameraOptions.getBoolean("scaleEnabled");
-        int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
-        int quality = this.cameraOptions.getInt("quality");
-        boolean isWeChatStyle = this.cameraOptions.getBoolean("isWeChatStyle");
+        boolean isWebp = this.cameraOptions.getBoolean("isWebp");
+        boolean isBmp = this.cameraOptions.getBoolean("isBmp");
+//        boolean showCropCircle = this.cameraOptions.getBoolean("showCropCircle");
+//        boolean showCropFrame = this.cameraOptions.getBoolean("showCropFrame");
+//        boolean showCropGrid = this.cameraOptions.getBoolean("showCropGrid");
+//        boolean compress = this.cameraOptions.getBoolean("compress");
+//        boolean freeStyleCropEnabled = this.cameraOptions.getBoolean("freeStyleCropEnabled");
+//        boolean rotateEnabled = this.cameraOptions.getBoolean("rotateEnabled");
+//        boolean scaleEnabled = this.cameraOptions.getBoolean("scaleEnabled");
+//        int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
+//        int quality = this.cameraOptions.getInt("quality");
+        int language = cameraOptions.hasKey("language") ? this.cameraOptions.getInt("language") : LanguageConfig.SYSTEM_LANGUAGE;
+//        boolean isWeChatStyle = this.cameraOptions.getBoolean("isWeChatStyle");
 
         int modeValue;
         if (imageCount == 1) {
@@ -191,6 +195,7 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         PictureSelector.create(currentActivity)
                 .openGallery(SelectMimeType.ofImage())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
                 .setImageEngine(GlideEngine.createGlideEngine())
+                .setLanguage(language)
                 .setMaxSelectNum(imageCount)// 最大图片选择数量 int
                 .setMinSelectNum(0)// 最小选择数量 int
                 .setImageSpanCount(4)// 每行显示个数 int
@@ -230,6 +235,8 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
 //                .withAspectRatio(CropW, CropH)// int 裁剪比例 如16:9 3:2 3:4 1:1 可自定义
 //                .hideBottomControls(isCrop)// 是否显示uCrop工具栏，默认不显示 true or false
                 .isGif(isGif)// 是否显示gif图片 true or false
+                .isWebp(isWebp)// 是否显示webp文件
+                .isBmp(isBmp) // 是否显示bmp文件
 //                .freeStyleCropEnabled(freeStyleCropEnabled)// 裁剪框是否可拖拽 true or false
 //                .circleDimmedLayer(showCropCircle)// 是否圆形裁剪 true or false
 //                .showCropFrame(showCropFrame)// 是否显示裁剪矩形边框 圆形裁剪时建议设为false   true or false
@@ -249,24 +256,26 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
      * 打开相机
      */
     private void openCamera() {
-        boolean isCrop = this.cameraOptions.getBoolean("isCrop");
-        int CropW = this.cameraOptions.getInt("CropW");
-        int CropH = this.cameraOptions.getInt("CropH");
-        boolean showCropCircle = this.cameraOptions.getBoolean("showCropCircle");
-        boolean showCropFrame = this.cameraOptions.getBoolean("showCropFrame");
-        boolean showCropGrid = this.cameraOptions.getBoolean("showCropGrid");
-        boolean compress = this.cameraOptions.getBoolean("compress");
-        boolean freeStyleCropEnabled = this.cameraOptions.getBoolean("freeStyleCropEnabled");
-        boolean rotateEnabled = this.cameraOptions.getBoolean("rotateEnabled");
-        boolean scaleEnabled = this.cameraOptions.getBoolean("scaleEnabled");
-        int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
-        int quality = this.cameraOptions.getInt("quality");
+        int language = cameraOptions.hasKey("language") ? this.cameraOptions.getInt("language") : LanguageConfig.SYSTEM_LANGUAGE;
+//        boolean isCrop = this.cameraOptions.getBoolean("isCrop");
+//        int CropW = this.cameraOptions.getInt("CropW");
+//        int CropH = this.cameraOptions.getInt("CropH");
+//        boolean showCropCircle = this.cameraOptions.getBoolean("showCropCircle");
+//        boolean showCropFrame = this.cameraOptions.getBoolean("showCropFrame");
+//        boolean showCropGrid = this.cameraOptions.getBoolean("showCropGrid");
+//        boolean compress = this.cameraOptions.getBoolean("compress");
+//        boolean freeStyleCropEnabled = this.cameraOptions.getBoolean("freeStyleCropEnabled");
+//        boolean rotateEnabled = this.cameraOptions.getBoolean("rotateEnabled");
+//        boolean scaleEnabled = this.cameraOptions.getBoolean("scaleEnabled");
+//        int minimumCompressSize = this.cameraOptions.getInt("minimumCompressSize");
+//        int quality = this.cameraOptions.getInt("quality");
 
         Boolean isAndroidQ = SdkVersionUtils.isQ();
 
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
                 .openCamera(SelectMimeType.ofImage())
+                .setLanguage(language)
 //                .setImageEngine(GlideEngine.createGlideEngine())
 //                .setMinSelectNum(0)// 最小选择数量 int
 //                .setImageSpanCount(4)// 每行显示个数 int
@@ -278,7 +287,27 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
 //                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
 //                .enableCrop(isCrop)// 是否裁剪 true or false
                 .setCompressEngine((CompressFileEngine) (context, source, call) -> {
+                    Luban.with(context).load(source).ignoreBy(100)
+                            .setCompressListener(new OnNewCompressListener() {
+                                @Override
+                                public void onStart() {
 
+                                }
+
+                                @Override
+                                public void onSuccess(String source, File compressFile) {
+                                    if (call != null) {
+                                        call.onCallback(source, compressFile.getAbsolutePath());
+                                    }
+                                }
+
+                                @Override
+                                public void onError(String source, Throwable e) {
+                                    if (call != null) {
+                                        call.onCallback(source, null);
+                                    }
+                                }
+                            }).launch();
                 })// 是否压缩 true or false
 //                .isOpenClickSound(false)// 是否开启点击声音 true or false
                 .forResult(new OnResultCallbackListener<LocalMedia>() {
@@ -303,11 +332,13 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         int quality = this.cameraOptions.getInt("quality");
         int MaxSecond = this.cameraOptions.getInt("MaxSecond");
         int MinSecond = this.cameraOptions.getInt("MinSecond");
-        int recordVideoSecond = this.cameraOptions.getInt("recordVideoSecond");
-        int imageCount = this.cameraOptions.getInt("imageCount");
+        int language = cameraOptions.hasKey("language") ? this.cameraOptions.getInt("language") : LanguageConfig.SYSTEM_LANGUAGE;
+//        int recordVideoSecond = this.cameraOptions.getInt("recordVideoSecond");
+//        int imageCount = this.cameraOptions.getInt("imageCount");
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
                 .openCamera(SelectMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
+                .setLanguage(language)
                 .setVideoQuality(quality)// 视频录制质量 0 or 1 int
                 .setRecordVideoMaxSecond(MaxSecond)
                 .setRecordVideoMinSecond(MinSecond)
@@ -332,14 +363,16 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
         int quality = this.cameraOptions.getInt("quality");
         int MaxSecond = this.cameraOptions.getInt("MaxSecond");
         int MinSecond = this.cameraOptions.getInt("MinSecond");
-        int recordVideoSecond = this.cameraOptions.getInt("recordVideoSecond");
+//        int recordVideoSecond = this.cameraOptions.getInt("recordVideoSecond");
         int videoCount = this.cameraOptions.getInt("imageCount");
         boolean isCamera = this.cameraOptions.getBoolean("allowTakeVideo");
+        int language = cameraOptions.hasKey("language") ? this.cameraOptions.getInt("language") : LanguageConfig.SYSTEM_LANGUAGE;
 
         Activity currentActivity = getCurrentActivity();
         PictureSelector.create(currentActivity)
                 .openGallery(SelectMimeType.ofVideo())//全部.PictureMimeType.ofAll()、图片.ofImage()、视频.ofVideo()、音频.ofAudio()
                 .setImageEngine(GlideEngine.createGlideEngine())
+                .setLanguage(language)
                 .isOpenClickSound(false)// 是否开启点击声音 true or false
                 .isDisplayCamera(isCamera)// 是否显示拍照按钮 true or false
                 .setMaxSelectNum(videoCount)// 最大视频选择数量 int
