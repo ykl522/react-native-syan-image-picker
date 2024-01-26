@@ -204,7 +204,7 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
                 .isPreviewVideo(false)// 是否可预览视频 true or false
                 .isPreviewAudio(false) // 是否可播放音频 true or false
                 .isDisplayCamera(isCamera)// 是否显示拍照按钮 true or false
-//                .setCameraImageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
+                .setCameraImageFormat(isAndroidQ ? PictureMimeType.PNG_Q : PictureMimeType.PNG)// 拍照保存图片格式后缀,默认jpeg
                 .isSelectZoomAnim(true)// 图片列表点击 缩放效果 默认true
 //                .sizeMultiplier(0.5f)// glide 加载图片大小 0~1之间 如设置 .glideOverride()无效
 //                .enableCrop(isCrop)// 是否裁剪 true or false
@@ -249,7 +249,7 @@ public class RNSyanImagePickerModule extends ReactContextBaseJavaModule {
 //                .scaleEnabled(scaleEnabled)// 裁剪是否可放大缩小图片 true or false
 //                .selectionMedia(selectList) // 当前已选中的图片 List
 //                .isWeChatStyle(isWeChatStyle)
-                .forResult(PictureConfig.REQUEST_CAMERA); //结果回调onActivityResult code
+                .forResult(PictureConfig.CHOOSE_REQUEST); //结果回调onActivityResult code
     }
 
     /**
