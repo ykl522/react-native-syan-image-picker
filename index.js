@@ -17,6 +17,9 @@ const defaultOptions = {
     CropW: ~~(width * 0.6),    // 裁剪宽度，默认屏幕宽度60%
     CropH: ~~(width * 0.6),    // 裁剪高度，默认屏幕宽度60%
     isGif: false,              // 是否允许选择GIF，默认false，暂无回调GIF数据
+    isWebp: false,              // 是否显示webp文件
+    isBmp: false,              // 是否显示bmp文件
+    language: -1,              // 语言 -1 系统语言 0 中文 参考com.luck.picture.lib.language.LanguageConfig
     showCropCircle: false,     // 是否显示圆形裁剪区域，默认false
     circleCropRadius: ~~(width / 4), // 圆形裁剪半径，默认屏幕宽度一半
     showCropFrame: true,       // 是否显示裁剪区域，默认true
