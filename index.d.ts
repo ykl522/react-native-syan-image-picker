@@ -7,6 +7,9 @@ export interface ImagePickerOption {
     CropW: number,    // 裁剪宽度，默认屏幕宽度60%
     CropH: number,    // 裁剪高度，默认屏幕宽度60%
     isGif: boolean,              // 是否允许选择GIF，默认false，暂无回调GIF数据
+    isWebp: boolean,              // 是否显示webp文件
+    isBmp: boolean,              // 是否显示bmp文件
+    language: number,              // 语言 -1 系统语言 0 中文 参考com.luck.picture.lib.language.LanguageConfig
     showCropCircle: boolean,     // 是否显示圆形裁剪区域，默认false
     circleCropRadius: number, // 圆形裁剪半径，默认屏幕宽度一半
     showCropFrame: boolean,       // 是否显示裁剪区域，默认true
